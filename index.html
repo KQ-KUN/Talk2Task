@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Talk2Task - 飞书智能协同助手 Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 240px;
+      background: #111827;
+      color: #fff;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .brand {
+      padding: 8px 10px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 12px;
+    }
+    .brand h1 {
+      font-size: 22px;
+      margin: 0 0 6px;
+    }
+    .brand p {
+      margin: 0;
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    .nav-btn {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #d1d5db;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s ease;
+    }
+    .nav-btn:hover,
+    .nav-btn.active {
+      background: #2563eb;
+      color: #fff;
+    }
+    .main {
+      flex: 1;
+      padding: 28px;
+    }
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .title-wrap h2 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    .title-wrap p {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .badge {
+      background: #e0edff;
+      color: #1d4ed8;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+    .stat-label {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+    .stat-value {
+      font-size: 34px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .stat-desc {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 16px;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .list-item {
+      border: 1px solid #eef2f7;
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: #fafcff;
+    }
+    .list-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .list-item p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .pill {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+      margin-right: 6px;
+    }
+    .pill.blue { background: #dbeafe; color: #1d4ed8; }
+    .pill.orange { background: #ffedd5; color: #c2410c; }
+    .pill.red { background: #fee2e2; color: #b91c1c; }
+    .pill.green { background: #dcfce7; color: #15803d; }
+    .chat-layout {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 16px;
+    }
+    .chat-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg {
+      max-width: 85%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      line-height: 1.6;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    }
+    .msg strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .msg.left {
+      background: #fff;
+      align-self: flex-start;
+      border-top-left-radius: 6px;
+    }
+    .msg.right {
+      background: #e8f0ff;
+      align-self: flex-end;
+      border-top-right-radius: 6px;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .table th,
+    .table td {
+      padding: 14px 12px;
+      border-bottom: 1px solid #eef2f7;
+      text-align: left;
+      vertical-align: top;
+    }
+    .table th {
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 700;
+      background: #f8fbff;
+    }
+    .kanban {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .kanban-col {
+      background: #f8fbff;
+      border-radius: 18px;
+      padding: 14px;
+      min-height: 320px;
+      border: 1px solid #ebf1fb;
+    }
+    .kanban-col h4 {
+      margin: 0 0 14px;
+      font-size: 15px;
+    }
+    .kanban-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+    }
+    .kanban-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .kanban-card p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .report-block {
+      padding: 16px;
+      border-radius: 16px;
+      background: #f8fbff;
+      border: 1px solid #ebf1fb;
+      margin-bottom: 14px;
+    }
+    .report-block h4 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+    .report-block p, .report-block li {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+    .report-block ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+      color: #fff;
+      border-radius: 24px;
+      padding: 26px;
+      margin-bottom: 20px;
+      box-shadow: 0 20px 45px rgba(37, 99, 235, 0.22);
+    }
+    .hero h3 {
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
+    .hero p {
+      margin: 0;
+      opacity: 0.95;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+    @media (max-width: 1100px) {
+      .grid-4, .grid-3, .kanban, .chat-layout, .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .app {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+      }
+      .main {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Talk2Task</h1>
+        <p>从群聊到执行的飞书智能协同助手</p>
+      </div>
+
+      <button class="nav-btn active" data-page="dashboard">01 工作台</button>
+      <button class="nav-btn" data-page="chat">02 群聊识别</button>
+      <button class="nav-btn" data-page="tasks">03 行动项提取</button>
+      <button class="nav-btn" data-page="board">04 任务看板</button>
+      <button class="nav-btn" data-page="reminder">05 催办提醒</button>
+      <button class="nav-btn" data-page="report">06 项目汇报</button>
+    </aside>
+
+    <main class="main">
+
+      <section class="page active" id="dashboard">
+        <div class="topbar">
+          <div class="title-wrap">
+            <h2>工作台</h2>
+            <p>将群聊中的讨论内容自动转化为可执行、可追踪、可汇报的任务流。</p>
+          </div>
+          <div class="badge">飞书 AI 产品创新赛道 Demo</div>
+        </div>
+
+        <div class="hero">
+          <h3>Talk2Task：把“聊过了”变成“做起来了”</h3>
+          <p>自动理解团队聊天内容，识别任务、负责人、截止时间与风险点，并进一步生成任务看板、催办提醒和管理汇报，帮助团队完成从沟通到执行的闭环协作。</p>
+        </div>
+
+        <div class="grid-4">
+          <div class="card">
+            <div class="stat-label">今日新增任务</div>
+            <div class="stat-value">12</div>
+            <div class="stat-desc">较昨日增加 3 项</div>
+          </div>
+          <div class="card">
+            <div class="stat-label">待跟进事项</div>
+            <div class="stat-value">8</div>
+            <div class="stat-desc">包含 2 项待确认负责人</div>
+          </div>
+          <div class="card">
+            <div class="stat-label">快到期任务</div>
+            <div class="stat-value">3</div>
+            <div class="stat-desc">24 小时内截止</div>
+          </div>
+          <div class="card">
+            <div class="stat-label">风险提醒</div>
+            <div class="stat-value">2</div>
+            <div class="stat-desc">存在延期与依赖阻塞</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 class="section-title">今日重点提醒</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>官网改版需求文档尚未确认最终负责人</strong>
+                <p>项目讨论已完成信息架构确认，但负责人归属尚未在群内明确，建议由产品经理立即确认。</p>
+                <span class="pill orange">待分配</span>
+              </div>
+              <div class="list-item">
+                <strong>海报设计任务将在今晚 18:00 到期</strong>
+                <p>设计初稿尚未上传，当前剩余时间较短，建议立即提醒小周同步进展。</p>
+                <span class="pill red">快到期</span>
+              </div>
+              <div class="list-item">
+                <strong>小程序提测任务存在接口依赖风险</strong>
+                <p>登录状态校验接口尚未完成，可能影响周五下午整体提测计划。</p>
+                <span class="pill red">风险</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title">AI 今日总结</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>总结摘要</strong>
+                <p>今天共识别 12 条行动项，其中 8 条处于待推进状态。当前核心工作聚焦官网改版与小程序提测。</p>
+              </div>
+              <div class="list-item">
+                <strong>关键依赖</strong>
+                <p>官网首页开发依赖设计初稿；小程序提测依赖登录校验接口补齐。</p>
+              </div>
+              <div class="list-item">
+                <strong>建议动作</strong>
+                <p>优先确认官网改版负责人，并对后端接口进度进行一次中午前追踪。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="chat">
+        <div class="topbar">
+          <div class="title-wrap">
+            <h2>群聊识别</h2>
+            <p>从飞书 IM 讨论内容中自动识别结论、行动项、负责人和风险点。</p>
+          </div>
+          <div class="badge">场景一：会议后自动生成任务清单</div>
+        </div>
+
+        <div class="chat-layout">
+          <div class="card">
+            <h3 class="section-title">项目群聊记录</h3>
+            <div class="chat-box">
+              <div class="msg left">
+                <strong>产品经理 小林</strong>
+                大家看下，官网改版这周要把首页方案定下来。
+              </div>
+              <div class="msg left">
+                <strong>设计师 小周</strong>
+                我今晚可以先出第一版视觉草图。
+              </div>
+              <div class="msg left">
+                <strong>前端 小陈</strong>
+                如果首页结构今天确定，我明天下午可以开始搭页面。
+              </div>
+              <div class="msg left">
+                <strong>运营 小杨</strong>
+                Banner 文案我明天中午前给到。
+              </div>
+              <div class="msg left">
+                <strong>产品经理 小林</strong>
+                好，那我们今天先确定信息架构，周四前完成设计初稿。
+              </div>
+              <div class="msg left">
+                <strong>前端 小陈</strong>
+                另外小程序提测接口还差一个登录状态校验。
+              </div>
+              <div class="msg left">
+                <strong>后端 老王</strong>
+                这个接口我今天晚上补。
+              </div>
+              <div class="msg left">
+                <strong>产品经理 小林</strong>
+                好，提测时间先定周五下午。
+              </div>
+              <div class="msg left">
+                <strong>运营 小杨</strong>
+                那我周五前同步活动页素材。
+              </div>
+              <div class="msg right">
+                <strong>Talk2Task AI</strong>
+                已识别 5 条行动项，1 个关键风险，2 项已确认结论。
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title">AI 识别结果</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>已确认事项</strong>
+                <p>官网改版本周推进；小程序计划周五下午提测。</p>
+                <span class="pill green">已确认</span>
+              </div>
+              <div class="list-item">
+                <strong>行动项 1</strong>
+                <p>小周今晚输出首页视觉草图。</p>
+                <span class="pill blue">负责人：小周</span>
+              </div>
+              <div class="list-item">
+                <strong>行动项 2</strong>
+                <p>小陈明天下午开始搭建首页页面。</p>
+                <span class="pill blue">负责人：小陈</span>
+              </div>
+              <div class="list-item">
+                <strong>行动项 3</strong>
+                <p>小杨明天中午前提交 Banner 文案。</p>
+                <span class="pill blue">负责人：小杨</span>
+              </div>
+              <div class="list-item">
+                <strong>行动项 4</strong>
+                <p>老王今晚补齐登录状态校验接口。</p>
+                <span class="pill blue">负责人：老王</span>
+              </div>
+              <div class="list-item">
+                <strong>风险提醒</strong>
+                <p>小程序提测依赖后端接口完成情况，若今晚未完成可能影响周五提测。</p>
+                <span class="pill red">依赖风险</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="tasks">
+        <div class="topbar">
+          <div class="title-wrap">
+            <h2>行动项提取</h2>
+            <p>将群聊中的自然语言内容转成结构化任务，支持负责人、截止时间和优先级识别。</p>
+          </div>
+          <div class="badge">场景二：群聊中自动推进任务</div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">结构化行动项列表</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>任务名称</th>
+                <th>负责人</th>
+                <th>截止时间</th>
+                <th>优先级</th>
+                <th>状态</th>
+                <th>备注</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>输出官网首页视觉草图</td>
+                <td>小周</td>
+                <td>今天 22:00 前</td>
+                <td>高</td>
+                <td><span class="pill orange">进行中</span></td>
+                <td>作为前端开发前置依赖</td>
+              </tr>
+              <tr>
+                <td>开始搭建官网首页页面</td>
+                <td>小陈</td>
+                <td>明天下午</td>
+                <td>中</td>
+                <td><span class="pill blue">待开始</span></td>
+                <td>等待设计初稿确认</td>
+              </tr>
+              <tr>
+                <td>提交 Banner 文案</td>
+                <td>小杨</td>
+                <td>明天 12:00 前</td>
+                <td>中</td>
+                <td><span class="pill blue">待开始</span></td>
+                <td>影响首页内容填充</td>
+              </tr>
+              <tr>
+                <td>补齐登录状态校验接口</td>
+                <td>老王</td>
+                <td>今天晚上</td>
+                <td>高</td>
+                <td><span class="pill orange">进行中</span></td>
+                <td>影响小程序周五提测</td>
+              </tr>
+              <tr>
+                <td>同步活动页素材</td>
+                <td>小杨</td>
+                <td>周五前</td>
+                <td>中</td>
+                <td><span class="pill blue">待开始</span></td>
+                <td>用于活动页配置与验收</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-3" style="margin-top:16px;">
+          <div class="card">
+            <h3 class="section-title">识别能力</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>任务抽取</strong>
+                <p>从群聊自然语言中识别“谁要做什么”。</p>
+              </div>
+              <div class="list-item">
+                <strong>时间识别</strong>
+                <p>自动提取今天、明天、周五前等时限表达。</p>
+              </div>
+              <div class="list-item">
+                <strong>优先级判断</strong>
+                <p>结合依赖关系与提测节点判断高优事项。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title">自动补全</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>缺失负责人提醒</strong>
+                <p>当群聊中只提到任务没有提到负责人时，自动标记待确认。</p>
+              </div>
+              <div class="list-item">
+                <strong>依赖关系提醒</strong>
+                <p>设计未完成会影响开发，小程序接口未完成会影响提测。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title">即时建议</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>建议 1</strong>
+                <p>优先跟进老王接口进度，避免提测延期。</p>
+              </div>
+              <div class="list-item">
+                <strong>建议 2</strong>
+                <p>为首页改版指定唯一 owner，减少后续推进模糊。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="board">
+        <div class="topbar">
+          <div class="title-wrap">
+            <h2>任务看板</h2>
+            <p>把分散在群聊里的动作项转成可视化推进面板。</p>
+          </div>
+          <div class="badge">从聊天到执行</div>
+        </div>
+
+        <div class="kanban">
+          <div class="kanban-col">
+            <h4>待开始</h4>
+            <div class="kanban-card">
+              <strong>提交 Banner 文案</strong>
+              <p>负责人：小杨</p>
+              <p>截止：明天 12:00 前</p>
+              <span class="pill blue">中优先级</span>
+            </div>
+            <div class="kanban-card">
+              <strong>同步活动页素材</strong>
+              <p>负责人：小杨</p>
+              <p>截止：周五前</p>
+              <span class="pill blue">中优先级</span>
+            </div>
+          </div>
+
+          <div class="kanban-col">
+            <h4>进行中</h4>
+            <div class="kanban-card">
+              <strong>输出官网首页视觉草图</strong>
+              <p>负责人：小周</p>
+              <p>截止：今天 22:00 前</p>
+              <span class="pill orange">高优先级</span>
+            </div>
+            <div class="kanban-card">
+              <strong>补齐登录状态校验接口</strong>
+              <p>负责人：老王</p>
+              <p>截止：今天晚上</p>
+              <span class="pill orange">高优先级</span>
+            </div>
+          </div>
+
+          <div class="kanban-col">
+            <h4>已完成</h4>
+            <div class="kanban-card">
+              <strong>确认官网首页信息架构</strong>
+              <p>负责人：小林</p>
+              <p>完成时间：今天 15:20</p>
+              <span class="pill green">已完成</span>
+            </div>
+            <div class="kanban-card">
+              <strong>确认小程序提测时间</strong>
+              <p>负责人：小林</p>
+              <p>完成时间：今天 15:35</p>
+              <span class="pill green">已完成</span>
+            </div>
+          </div>
+
+          <div class="kanban-col">
+            <h4>已延期 / 风险</h4>
+            <div class="kanban-card">
+              <strong>官网首页开发启动</strong>
+              <p>负责人：小陈</p>
+              <p>风险：依赖设计初稿完成</p>
+              <span class="pill red">依赖阻塞</span>
+            </div>
+            <div class="kanban-card">
+              <strong>小程序周五提测</strong>
+              <p>负责人：项目组</p>
+              <p>风险：依赖后端接口今晚交付</p>
+              <span class="pill red">潜在延期</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="reminder">
+        <div class="topbar">
+          <div class="title-wrap">
+            <h2>催办提醒</h2>
+            <p>自动识别快到期事项、无人响应任务和关键依赖阻塞。</p>
+          </div>
+          <div class="badge">场景三：自动追踪与提醒</div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3 class="section-title">快到期提醒</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>官网首页视觉草图</strong>
+                <p>距离截止还有 4 小时，建议提醒小周同步当前进度。</p>
+                <span class="pill red">今天 22:00 前</span>
+              </div>
+              <div class="list-item">
+                <strong>登录状态校验接口</strong>
+                <p>直接影响周五提测，建议今晚 20:00 前确认交付状态。</p>
+                <span class="pill red">今晚截止</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title">无人响应任务</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>官网改版 owner 未最终指定</strong>
+                <p>任务被多人提及，但未形成唯一责任归属，推进风险较高。</p>
+                <span class="pill orange">待确认负责人</span>
+              </div>
+              <div class="list-item">
+                <strong>活动页素材同步未有确认反馈</strong>
+                <p>群内已提出，但未收到明确“收到/会处理”的响应。</p>
+                <span class="pill orange">待确认接收</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title">风险洞察</h3>
+            <div class="list">
+              <div class="list-item">
+                <strong>提测链路风险</strong>
+                <p>后端接口 → 联调 → 提测形成串联依赖，任一环节延后都会影响整体节点。</p>
+                <span class="pill red">关键路径风险</span>
+              </div>
+              <div class="list-item">
+                <strong>设计开发衔接紧张</strong>
+                <p>设计输出和前端启动时间相邻，留给返工与调整的时间偏少。</p>
+                <span class="pill red">资源冲突风险</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <h3 class="section-title">AI 建议动作</h3>
+          <div class="list">
+            <div class="list-item">
+              <strong>建议立即执行的 3 个动作</strong>
+              <p>1）由小林在群内确认官网改版 owner；2）今晚 20:00 前追踪老王接口进展；3）要求小周在提交草图时同步页面结构说明，减少前端二次沟通成本。</p>
+              <span class="pill blue">自动生成建议</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="report">
+        <div class="topbar">
+          <div class="title-wrap">
+            <h2>项目汇报</h2>
+            <p>面向项目负责人和管理者自动生成可直接发送的阶段性进度总结。</p>
+          </div>
+          <div class="badge">一键生成周报 / 进度同步</div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">AI 自动生成的项目状态汇报</h3>
+
+          <div class="report-block">
+            <h4>本周项目进展</h4>
+            <p>本周围绕官网改版和小程序提测两项任务推进。官网改版方面，已完成首页信息架构讨论，设计初稿预计于周四前完成，前端将在设计确认后启动页面搭建。小程序方面，当前主要阻塞点为登录状态校验接口，预计今晚补齐，整体提测计划保持在周五下午。</p>
+          </div>
+
+          <div class="report-block">
+            <h4>已完成事项</h4>
+            <ul>
+              <li>官网首页信息架构已完成讨论并确认。</li>
+              <li>小程序提测时间已在群内达成一致，暂定周五下午。</li>
+              <li>活动页素材需求已同步至运营侧。</li>
+            </ul>
+          </div>
+
+          <div class="report-block">
+            <h4>当前风险</h4>
+            <ul>
+              <li>小程序提测依赖后端接口按时完成，若今晚未交付将影响周五节点。</li>
+              <li>官网设计与前端开发衔接时间较紧，返工缓冲不足。</li>
+              <li>官网改版负责人尚未最终明确，可能影响后续协调效率。</li>
+            </ul>
+          </div>
+
+          <div class="report-block">
+            <h4>下阶段计划</h4>
+            <ul>
+              <li>完成官网首页设计初稿并启动开发。</li>
+              <li>完成小程序提测前接口联调。</li>
+              <li>同步 Banner 文案与活动页素材，推进内容配置与验收。</li>
+            </ul>
+          </div>
+
+          <div class="report-block">
+            <h4>适合发送给领导的简版同步</h4>
+            <p>当前官网改版和小程序提测正按计划推进。官网首页已完成信息架构确认，设计稿预计周四前输出；小程序提测计划定于周五下午，当前核心风险是后端登录校验接口需今晚完成。整体进度可控，建议优先关注接口交付与官网改版 owner 确认。</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll(".nav-btn");
+    const pages = document.querySelectorAll(".page");
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.getAttribute("data-page");
+
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        pages.forEach((page) => {
+          page.classList.remove("active");
+          if (page.id === target) page.classList.add("active");
+        });
+      });
+    });
+  </script>
+</body>
+</html>
