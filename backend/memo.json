@@ -1,0 +1,60 @@
+[
+  {
+    "id": 1,
+    "created_at": "2026-04-15 20:31:18",
+    "summary": "本次讨论已形成 2 项阶段性结论，识别出 6 条待办事项。",
+    "tasks": [
+      {
+        "deadline": "今晚",
+        "owner": "设计师 小周",
+        "priority": "高",
+        "status": "待开始",
+        "task_id": "202604152031075657362",
+        "task_name": "出第一版视觉草图"
+      },
+      {
+        "deadline": "今天",
+        "owner": "前端 小陈",
+        "priority": "高",
+        "status": "待开始",
+        "task_id": "202604152031075659663",
+        "task_name": "开始搭页面"
+      },
+      {
+        "deadline": "明天中午前",
+        "owner": "运营 小杨",
+        "priority": "中",
+        "status": "待开始",
+        "task_id": "202604152031075673174",
+        "task_name": "给到"
+      },
+      {
+        "deadline": "今天",
+        "owner": "产品经理 小林",
+        "priority": "高",
+        "status": "待开始",
+        "task_id": "202604152031075682865",
+        "task_name": "完成设计初稿"
+      },
+      {
+        "deadline": "今天晚上",
+        "owner": "后端 老王",
+        "priority": "高",
+        "status": "待开始",
+        "task_id": "202604152031075683447",
+        "task_name": "补"
+      },
+      {
+        "deadline": "周五前",
+        "owner": "运营 小杨",
+        "priority": "中",
+        "status": "待开始",
+        "task_id": "202604152031075683939",
+        "task_name": "同步活动页素材"
+      }
+    ],
+    "risks": [
+      "另外小程序提测接口还差一个登录状态校验。"
+    ]
+  }
+]

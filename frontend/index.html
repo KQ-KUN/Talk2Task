@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Talk2Task</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f6f8fb;
+      color: #1f2937;
+    }
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .header {
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+    .header p {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 0.95fr;
+      gap: 18px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+      margin-bottom: 18px;
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+    .subtext {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+    .chat-box {
+      border: 1px solid #e5eaf2;
+      background: #f9fbff;
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 220px;
+      white-space: pre-wrap;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    button, select {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    button { cursor: pointer; }
+    select {
+      border: 1px solid #d8e1ee;
+      background: white;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    .primary {
+      background: #2563eb;
+      color: white;
+    }
+    .secondary {
+      background: #eef2ff;
+      color: #1d4ed8;
+    }
+    .muted {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    .danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .success {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .status {
+      margin-top: 14px;
+      min-height: 22px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .result-block {
+      margin-bottom: 16px;
+      padding: 16px;
+      background: #f8fbff;
+      border: 1px solid #ebf1fb;
+      border-radius: 16px;
+    }
+    .result-block h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+    .result-block p, .result-block li {
+      margin: 0;
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.8;
+    }
+    .result-block ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+    .task-item {
+      border: 1px solid #e8eef7;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      background: white;
+    }
+    .task-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .task-main strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .task-main p {
+      margin: 0;
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+    .pill {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pill-blue { background: #dbeafe; color: #1d4ed8; }
+    .pill-orange { background: #ffedd5; color: #c2410c; }
+    .pill-green { background: #dcfce7; color: #15803d; }
+    .memo-item {
+      border: 1px solid #e8eef7;
+      border-radius: 14px;
+      padding: 14px;
+      background: #fafcff;
+      margin-bottom: 12px;
+    }
+    .memo-time {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .memo-item strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .memo-item ul {
+      margin: 0 0 8px 18px;
+      padding: 0;
+    }
+    .memo-item li {
+      font-size: 13px;
+      color: #4b5563;
+      line-height: 1.7;
+      margin-bottom: 4px;
+    }
+    .empty {
+      color: #9ca3af;
+      font-size: 14px;
+    }
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .app {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1>Talk2Task</h1>
+      <p>自动提取群聊内容，整理出待办事项、负责人、时间和风险，并添加到备忘录。</p>
+    </div>
+
+    <div class="layout">
+      <div>
+        <div class="card">
+          <h2>群聊内容</h2>
+          <div class="subtext">系统自动提取最近同步的群聊内容，无需手动粘贴。</div>
+          <div id="chatSource" class="subtext">来源：未提取</div>
+          <div id="chatText" class="chat-box">还没有提取群聊内容</div>
+
+          <div class="actions">
+            <button class="primary" id="fetchBtn">开始提取</button>
+            <button class="secondary" id="analyzeBtn">开始整理</button>
+          </div>
+
+          <div class="status" id="statusText">等待提取群聊内容…</div>
+        </div>
+
+        <div class="card">
+          <h2>整理结果</h2>
+
+          <div class="actions" style="margin-top:0; margin-bottom:16px;">
+            <button class="success" id="addMemoBtn">添加到备忘录</button>
+          </div>
+
+          <div class="result-block">
+            <h3>讨论摘要</h3>
+            <p id="summaryText" class="empty">还没有整理结果</p>
+          </div>
+
+          <div class="result-block">
+            <h3>待办事项</h3>
+            <div id="tasksList" class="empty">还没有整理结果</div>
+          </div>
+
+          <div class="result-block">
+            <h3>风险提醒</h3>
+            <div id="risksList" class="empty">还没有整理结果</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>备忘录</h2>
+          <div class="subtext">整理后的结果可以直接沉淀到备忘录，方便后续查看。</div>
+
+          <div class="actions" style="margin-top:0; margin-bottom:16px;">
+            <button class="muted" id="refreshMemoBtn">刷新备忘录</button>
+            <button class="danger" id="clearMemoBtn">清空备忘录</button>
+          </div>
+
+          <div id="memoList" class="empty">正在加载备忘录…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    const fetchBtn = document.getElementById("fetchBtn");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const addMemoBtn = document.getElementById("addMemoBtn");
+    const refreshMemoBtn = document.getElementById("refreshMemoBtn");
+    const clearMemoBtn = document.getElementById("clearMemoBtn");
+
+    const chatSource = document.getElementById("chatSource");
+    const chatText = document.getElementById("chatText");
+    const statusText = document.getElementById("statusText");
+
+    const summaryText = document.getElementById("summaryText");
+    const tasksList = document.getElementById("tasksList");
+    const risksList = document.getElementById("risksList");
+    const memoList = document.getElementById("memoList");
+
+    let latestResult = null;
+    let latestRecordId = null;
+    let latestChatText = "";
+
+    function getStatusPill(status) {
+      if (status === "已完成") return '<span class="pill pill-green">已完成</span>';
+      if (status === "进行中") return '<span class="pill pill-orange">进行中</span>';
+      return '<span class="pill pill-blue">待开始</span>';
+    }
+
+    function renderTasks(tasks, recordId = null) {
+      if (!tasks || tasks.length === 0) {
+        tasksList.innerHTML = '<div class="empty">没有待办事项</div>';
+        return;
+      }
+
+      tasksList.innerHTML = tasks.map(task => `
+        <div class="task-item">
+          <div class="task-row">
+            <div class="task-main">
+              <strong>${task.task_name}</strong>
+              <p>负责人：${task.owner}</p>
+              <p>截止时间：${task.deadline}</p>
+              <p>优先级：${task.priority}</p>
+              ${getStatusPill(task.status || "待开始")}
+            </div>
+            ${
+              recordId
+                ? `<div>
+                    <select onchange="changeTaskStatus(${recordId}, '${task.task_id}', this.value)">
+                      <option value="待开始" ${(task.status || "待开始") === "待开始" ? "selected" : ""}>待开始</option>
+                      <option value="进行中" ${(task.status || "待开始") === "进行中" ? "selected" : ""}>进行中</option>
+                      <option value="已完成" ${(task.status || "待开始") === "已完成" ? "selected" : ""}>已完成</option>
+                    </select>
+                  </div>`
+                : ""
+            }
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRisks(risks) {
+      if (!risks || risks.length === 0) {
+        risksList.innerHTML = '<div class="empty">没有风险提醒</div>';
+        return;
+      }
+
+      risksList.innerHTML = `<ul>${risks.map(risk => `<li>${risk}</li>`).join("")}</ul>`;
+    }
+
+    function renderMemos(memos) {
+      if (!memos || memos.length === 0) {
+        memoList.innerHTML = '<div class="empty">还没有备忘录内容</div>';
+        return;
+      }
+
+      const reversed = [...memos].reverse();
+
+      memoList.innerHTML = reversed.map(memo => `
+        <div class="memo-item">
+          <div class="memo-time">${memo.created_at}</div>
+
+          <strong>摘要</strong>
+          <div class="subtext" style="margin-bottom:10px;">${memo.summary || "无摘要"}</div>
+
+          <strong>待办事项</strong>
+          ${
+            memo.tasks && memo.tasks.length > 0
+              ? `<ul>${memo.tasks.map(task => `<li>${task.task_name}｜${task.owner}｜${task.deadline}｜状态：${task.status || "待开始"}</li>`).join("")}</ul>`
+              : `<div class="empty">无待办事项</div>`
+          }
+
+          <strong>风险提醒</strong>
+          ${
+            memo.risks && memo.risks.length > 0
+              ? `<ul>${memo.risks.map(risk => `<li>${risk}</li>`).join("")}</ul>`
+              : `<div class="empty">无风险提醒</div>`
+          }
+        </div>
+      `).join("");
+    }
+
+    async function fetchChatContent() {
+      statusText.textContent = "正在提取群聊内容…";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/fetch-chat`);
+        const data = await res.json();
+
+        latestChatText = data.chat_text || "";
+        chatText.textContent = latestChatText || "没有提取到内容";
+        chatSource.textContent = `来源：${data.source || "最近同步的群聊"}`;
+        statusText.textContent = "群聊内容提取完成";
+      } catch (error) {
+        statusText.textContent = "提取失败，请确认后端正在运行";
+      }
+    }
+
+    async function analyzeChat() {
+      if (!latestChatText.trim()) {
+        statusText.textContent = "请先提取群聊内容";
+        return;
+      }
+
+      statusText.textContent = "正在整理结果…";
+      summaryText.textContent = "整理中…";
+      tasksList.innerHTML = '<div class="empty">整理中…</div>';
+      risksList.innerHTML = '<div class="empty">整理中…</div>';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/analyze`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ text: latestChatText })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusText.textContent = data.error || "整理失败";
+          return;
+        }
+
+        latestResult = data;
+        latestRecordId = data.record_id;
+
+        summaryText.textContent = data.summary || "无摘要";
+        renderTasks(data.tasks || [], latestRecordId);
+        renderRisks(data.risks || []);
+        statusText.textContent = "整理完成";
+      } catch (error) {
+        statusText.textContent = "整理失败，请确认后端正在运行";
+      }
+    }
+
+    async function addToMemo() {
+      if (!latestResult) {
+        statusText.textContent = "请先完成整理";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/memos`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            summary: latestResult.summary || "",
+            tasks: latestResult.tasks || [],
+            risks: latestResult.risks || []
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusText.textContent = data.error || "添加失败";
+          return;
+        }
+
+        statusText.textContent = "已添加到备忘录";
+        loadMemos();
+      } catch (error) {
+        statusText.textContent = "添加失败，请确认后端正在运行";
+      }
+    }
+
+    async function loadMemos() {
+      try {
+        const res = await fetch(`${API_BASE}/api/memos`);
+        const data = await res.json();
+        renderMemos(data);
+      } catch (error) {
+        memoList.innerHTML = '<div class="empty">备忘录加载失败</div>';
+      }
+    }
+
+    async function clearMemos() {
+      const confirmed = confirm("确定要清空全部备忘录吗？");
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/memos`, {
+          method: "DELETE"
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusText.textContent = data.error || "清空失败";
+          return;
+        }
+
+        statusText.textContent = "已清空备忘录";
+        loadMemos();
+      } catch (error) {
+        statusText.textContent = "清空失败，请确认后端正在运行";
+      }
+    }
+
+    async function changeTaskStatus(recordId, taskId, status) {
+      try {
+        const res = await fetch(`${API_BASE}/api/tasks/status`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            record_id: recordId,
+            task_id: taskId,
+            status: status
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusText.textContent = data.error || "状态更新失败";
+          return;
+        }
+
+        statusText.textContent = "任务状态已更新";
+
+        const historyRes = await fetch(`${API_BASE}/api/history`);
+        const historyData = await historyRes.json();
+        const current = historyData.find(item => item.id === recordId);
+
+        if (current) {
+          latestResult = current.result;
+          renderTasks(current.result.tasks || [], recordId);
+          renderRisks(current.result.risks || []);
+          summaryText.textContent = current.result.summary || "无摘要";
+        }
+      } catch (error) {
+        statusText.textContent = "状态更新失败，请确认后端正在运行";
+      }
+    }
+
+    fetchBtn.addEventListener("click", fetchChatContent);
+    analyzeBtn.addEventListener("click", analyzeChat);
+    addMemoBtn.addEventListener("click", addToMemo);
+    refreshMemoBtn.addEventListener("click", loadMemos);
+    clearMemoBtn.addEventListener("click", clearMemos);
+
+    loadMemos();
+
+    window.changeTaskStatus = changeTaskStatus;
+  </script>
+</body>
+</html>
