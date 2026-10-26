@@ -1,16 +1,44 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, request, jsonify, send_from_directory
 import json
 import os
 import re
 from datetime import datetime
+from urllib.parse import urlsplit
 
 app = Flask(__name__)
-CORS(app)
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(BASE_DIR, "data.json")
-MEMO_FILE = os.path.join(BASE_DIR, "memo.json")
+DATA_FILE = os.path.join(BASE_DIR, "instance", "data.json")
+MEMO_FILE = os.path.join(BASE_DIR, "instance", "memo.json")
+FRONTEND_DIR = os.path.join(BASE_DIR, "..", "frontend")
+
+
+@app.before_request
+def protect_local_app():
+    # This app is single-user and local. Do not trust DNS aliases or other sites.
+    if request.remote_addr not in {"127.0.0.1", "::1"}:
+        return jsonify({"error": "Local access only"}), 403
+    try:
+        host = urlsplit("http://" + request.host).hostname
+    except ValueError:
+        host = None
+    if host not in {"localhost", "127.0.0.1", "::1"}:
+        return jsonify({"error": "Invalid host"}), 403
+    origin = request.headers.get("Origin")
+    if origin is not None and origin != request.host_url.rstrip("/"):
+        return jsonify({"error": "Cross-origin access denied"}), 403
+    if request.headers.get("Sec-Fetch-Site") not in {None, "none", "same-origin"}:
+        return jsonify({"error": "Cross-site access denied"}), 403
+    if request.path.startswith("/api/") and request.method not in {"GET", "HEAD", "OPTIONS"}:
+        # A custom header prevents simple cross-site form requests, even without Origin.
+        if request.headers.get("X-Talk2Task-Request") != "1":
+            return jsonify({"error": "Missing application request header"}), 403
+        if request.method == "POST":
+            if not request.is_json:
+                return jsonify({"error": "JSON object required"}), 415
+            if not isinstance(request.get_json(silent=True), dict):
+                return jsonify({"error": "JSON object required"}), 400
 
 
 def load_json_file(file_path, default_value):
@@ -21,6 +49,7 @@ def load_json_file(file_path, default_value):
 
 
 def save_json_file(file_path, data):
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -165,7 +194,7 @@ def analyze_input_text(text):
 
 @app.route("/")
 def home():
-    return jsonify({"message": "Talk2Task backend is running"})
+    return send_from_directory(FRONTEND_DIR, "index.html")
 
 
 @app.route("/api/fetch-chat", methods=["GET"])
@@ -188,7 +217,10 @@ def fetch_chat():
 @app.route("/api/analyze", methods=["POST"])
 def analyze_text():
     body = request.get_json()
-    text = body.get("text", "").strip()
+    text = body.get("text", "")
+    if not isinstance(text, str):
+        return jsonify({"error": "Text must be a string"}), 400
+    text = text.strip()
 
     if not text:
         return jsonify({"error": "请先提取群聊内容"}), 400
@@ -245,6 +277,8 @@ def update_task_status():
 
     if not record_id or not task_id or not new_status:
         return jsonify({"error": "缺少必要参数"}), 400
+    if type(record_id) is not int or not isinstance(task_id, str) or new_status not in ("待开始", "进行中", "已完成"):
+        return jsonify({"error": "Invalid task status fields"}), 400
 
     records = load_data()
     updated = False
@@ -274,9 +308,14 @@ def get_memos():
 @app.route("/api/memos", methods=["POST"])
 def add_memo():
     body = request.get_json()
-    summary = body.get("summary", "").strip()
+    summary = body.get("summary", "")
     tasks = body.get("tasks", [])
     risks = body.get("risks", [])
+    if not isinstance(summary, str) or not isinstance(tasks, list) or not isinstance(risks, list):
+        return jsonify({"error": "Invalid memo fields"}), 400
+    if not all(isinstance(task, dict) for task in tasks) or not all(isinstance(risk, str) for risk in risks):
+        return jsonify({"error": "Invalid memo fields"}), 400
+    summary = summary.strip()
 
     if not summary and not tasks and not risks:
         return jsonify({"error": "没有可添加到备忘录的内容"}), 400
@@ -301,4 +340,4 @@ def clear_memos():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="127.0.0.1", debug=False)

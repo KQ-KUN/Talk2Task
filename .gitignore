@@ -1,0 +1,11 @@
+# Local runtime data and credentials
+backend/instance/
+backend/data.json
+backend/memo.json
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+__pycache__/
+*.pyc

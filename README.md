@@ -108,3 +108,13 @@ Talk2Task
 │  ├─ project-book.md
 │  └─ video-script.md
 └─ README.md
+
+## 本机安全启动
+
+安装 `backend/requirements.txt` 后，运行 `python backend/app.py`，浏览器打开 `http://127.0.0.1:5000/`。前后端必须从同一地址加载；不再直接双击 `frontend/index.html` 或跨域调用后端。服务只用于本机单用户演示，不应直接发布为公网或多用户 API。
+
+运行数据写入被 Git 忽略的 `backend/instance/`。旧版本提交的演示记录保留在 `backend/examples/`，不会自动导入；已有真实记录应留在本机，迁移前备份，不得重新提交。历史提交仍含旧文件，移动文件不等于清除历史。
+
+安全回归：`python -m unittest discover -s tests -v`。
+
+前端安全回归（本机已有 Playwright 时）：`node tests/browser-security.cjs`。默认使用 Windows Edge；可通过 `PLAYWRIGHT_MODULE` 指定已有模块位置，通过 `TALK2TASK_BROWSER_CHANNEL` 选择浏览器。测试拦截全部网络请求，仅使用合成数据。

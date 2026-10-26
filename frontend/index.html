@@ -270,7 +270,17 @@
   </div>
 
   <script>
-    const API_BASE = "http://127.0.0.1:5000";
+    async function apiFetch(path, options = {}) {
+      const headers = new Headers(options.headers);
+      headers.set("X-Talk2Task-Request", "1");
+      return fetch(path, { ...options, headers });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[char]));
+    }
 
     const fetchBtn = document.getElementById("fetchBtn");
     const analyzeBtn = document.getElementById("analyzeBtn");
@@ -307,16 +317,16 @@
         <div class="task-item">
           <div class="task-row">
             <div class="task-main">
-              <strong>${task.task_name}</strong>
-              <p>负责人：${task.owner}</p>
-              <p>截止时间：${task.deadline}</p>
-              <p>优先级：${task.priority}</p>
+              <strong>${escapeHtml(task.task_name)}</strong>
+              <p>负责人：${escapeHtml(task.owner)}</p>
+              <p>截止时间：${escapeHtml(task.deadline)}</p>
+              <p>优先级：${escapeHtml(task.priority)}</p>
               ${getStatusPill(task.status || "待开始")}
             </div>
             ${
               recordId
                 ? `<div>
-                    <select onchange="changeTaskStatus(${recordId}, '${task.task_id}', this.value)">
+                    <select data-record-id="${escapeHtml(recordId)}" data-task-id="${escapeHtml(task.task_id)}">
                       <option value="待开始" ${(task.status || "待开始") === "待开始" ? "selected" : ""}>待开始</option>
                       <option value="进行中" ${(task.status || "待开始") === "进行中" ? "selected" : ""}>进行中</option>
                       <option value="已完成" ${(task.status || "待开始") === "已完成" ? "selected" : ""}>已完成</option>
@@ -327,6 +337,11 @@
           </div>
         </div>
       `).join("");
+      tasksList.querySelectorAll("select[data-task-id]").forEach(select => {
+        select.addEventListener("change", () => {
+          void changeTaskStatus(Number(select.dataset.recordId), select.dataset.taskId, select.value);
+        });
+      });
     }
 
     function renderRisks(risks) {
@@ -335,7 +350,7 @@
         return;
       }
 
-      risksList.innerHTML = `<ul>${risks.map(risk => `<li>${risk}</li>`).join("")}</ul>`;
+      risksList.innerHTML = `<ul>${risks.map(risk => `<li>${escapeHtml(risk)}</li>`).join("")}</ul>`;
     }
 
     function renderMemos(memos) {
@@ -348,22 +363,22 @@
 
       memoList.innerHTML = reversed.map(memo => `
         <div class="memo-item">
-          <div class="memo-time">${memo.created_at}</div>
+          <div class="memo-time">${escapeHtml(memo.created_at)}</div>
 
           <strong>摘要</strong>
-          <div class="subtext" style="margin-bottom:10px;">${memo.summary || "无摘要"}</div>
+          <div class="subtext" style="margin-bottom:10px;">${escapeHtml(memo.summary || "无摘要")}</div>
 
           <strong>待办事项</strong>
           ${
             memo.tasks && memo.tasks.length > 0
-              ? `<ul>${memo.tasks.map(task => `<li>${task.task_name}｜${task.owner}｜${task.deadline}｜状态：${task.status || "待开始"}</li>`).join("")}</ul>`
+              ? `<ul>${memo.tasks.map(task => `<li>${escapeHtml(task.task_name)}｜${escapeHtml(task.owner)}｜${escapeHtml(task.deadline)}｜状态：${escapeHtml(task.status || "待开始")}</li>`).join("")}</ul>`
               : `<div class="empty">无待办事项</div>`
           }
 
           <strong>风险提醒</strong>
           ${
             memo.risks && memo.risks.length > 0
-              ? `<ul>${memo.risks.map(risk => `<li>${risk}</li>`).join("")}</ul>`
+              ? `<ul>${memo.risks.map(risk => `<li>${escapeHtml(risk)}</li>`).join("")}</ul>`
               : `<div class="empty">无风险提醒</div>`
           }
         </div>
@@ -374,7 +389,7 @@
       statusText.textContent = "正在提取群聊内容…";
 
       try {
-        const res = await fetch(`${API_BASE}/api/fetch-chat`);
+        const res = await apiFetch(`/api/fetch-chat`);
         const data = await res.json();
 
         latestChatText = data.chat_text || "";
@@ -398,7 +413,7 @@
       risksList.innerHTML = '<div class="empty">整理中…</div>';
 
       try {
-        const res = await fetch(`${API_BASE}/api/analyze`, {
+        const res = await apiFetch(`/api/analyze`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -432,7 +447,7 @@
       }
 
       try {
-        const res = await fetch(`${API_BASE}/api/memos`, {
+        const res = await apiFetch(`/api/memos`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -460,7 +475,7 @@
 
     async function loadMemos() {
       try {
-        const res = await fetch(`${API_BASE}/api/memos`);
+        const res = await apiFetch(`/api/memos`);
         const data = await res.json();
         renderMemos(data);
       } catch (error) {
@@ -473,7 +488,7 @@
       if (!confirmed) return;
 
       try {
-        const res = await fetch(`${API_BASE}/api/memos`, {
+        const res = await apiFetch(`/api/memos`, {
           method: "DELETE"
         });
 
@@ -493,7 +508,7 @@
 
     async function changeTaskStatus(recordId, taskId, status) {
       try {
-        const res = await fetch(`${API_BASE}/api/tasks/status`, {
+        const res = await apiFetch(`/api/tasks/status`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -514,7 +529,7 @@
 
         statusText.textContent = "任务状态已更新";
 
-        const historyRes = await fetch(`${API_BASE}/api/history`);
+        const historyRes = await apiFetch(`/api/history`);
         const historyData = await historyRes.json();
         const current = historyData.find(item => item.id === recordId);
 
